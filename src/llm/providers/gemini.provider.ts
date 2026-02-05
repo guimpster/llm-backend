@@ -1,6 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ILLMProvider, TriageResponse } from '../interfaces/llm-provider.interface';
 import { calculateCost } from '../cost-calculator';
+import { parseAndValidateLLMOutput } from '../parse-llm-response';
+import { InvalidLLMResponseError } from '../../errors';
 import { logger } from '../../utils/logger';
 
 export class GeminiProvider implements ILLMProvider {
@@ -13,8 +15,8 @@ export class GeminiProvider implements ILLMProvider {
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
-  async triage(subject: string, body: string): Promise<TriageResponse> {
-    const prompt = `
+  private buildPrompt(subject: string, body: string): string {
+    return `
       You are an expert support ticket triaging assistant.
       Analyze the following support ticket and return a JSON response.
 
@@ -41,25 +43,29 @@ export class GeminiProvider implements ILLMProvider {
 
       IMPORTANT: Return ONLY valid JSON. No markdown code blocks.
     `;
+  }
 
-    try {
-      const model = this.genAI.getGenerativeModel({ 
-        model: this.model,
-        generationConfig: {
-          responseMimeType: "application/json",
-        }
-      });
+  /** Single attempt: call API and return content + usage. Used for retry logic. */
+  private async callAPI(subject: string, body: string): Promise<{ content: string; inputTokens: number; outputTokens: number }> {
+    const model = this.genAI.getGenerativeModel({
+      model: this.model,
+      generationConfig: { responseMimeType: 'application/json' }
+    });
+    const result = await model.generateContent(this.buildPrompt(subject, body));
+    const response = result.response;
+    const text = response.text();
+    if (!text || typeof text !== 'string') {
+      throw new InvalidLLMResponseError('Gemini returned an empty response');
+    }
+    const inputTokens = response.usageMetadata?.promptTokenCount ?? 0;
+    const outputTokens = response.usageMetadata?.candidatesTokenCount ?? 0;
+    return { content: text, inputTokens, outputTokens };
+  }
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
-      const parsed = JSON.parse(text);
-      
-      // Gemini's token usage is in the metadata
-      const inputTokens = response.usageMetadata?.promptTokenCount || 0;
-      const outputTokens = response.usageMetadata?.candidatesTokenCount || 0;
-
+  async triage(subject: string, body: string): Promise<TriageResponse> {
+    const attempt = async (): Promise<TriageResponse> => {
+      const { content, inputTokens, outputTokens } = await this.callAPI(subject, body);
+      const parsed = parseAndValidateLLMOutput(content);
       return {
         category: parsed.category,
         priority: parsed.priority,
@@ -71,7 +77,21 @@ export class GeminiProvider implements ILLMProvider {
           model: this.pricingModel
         }
       };
+    };
+
+    try {
+      return await attempt();
     } catch (error) {
+      // Invalid/malformed output: retry once with same provider, then give up
+      if (error instanceof InvalidLLMResponseError) {
+        logger.warn({ provider: this.name }, 'Invalid LLM response, retrying once');
+        try {
+          return await attempt();
+        } catch (retryError) {
+          logger.error({ provider: this.name }, 'Retry after invalid response failed');
+          throw retryError instanceof InvalidLLMResponseError ? retryError : new InvalidLLMResponseError();
+        }
+      }
       logger.error({ error, provider: this.name }, 'Gemini triage failed');
       throw error;
     }

@@ -4,8 +4,8 @@ import { TriageInput } from '../validation/triage-input.schema';
 export class TriageService {
   constructor(private readonly provider: ILLMProvider) {}
 
+  /** Delegates to the configured provider (with fallback); validation and retries live in providers. */
   async triageTicket(input: TriageInput): Promise<TriageResponse> {
-    // We could add business logic here (e.g., checking for cached results)
     return this.provider.triage(input.subject, input.body);
   }
 }

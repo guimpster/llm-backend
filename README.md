@@ -86,6 +86,21 @@ You can also import the provided `LLM-Backend-Triage.postman_collection.json` fi
 
 ## Implementation Details & Assumptions
 
+### Tradeoffs & Assumptions
+- **Strict output validation + one retry**: LLMs can return invalid JSON or shapes that don’t match the schema. We parse safely, validate with a Zod schema, and on failure retry the same provider once; if it still fails we throw so the fallback provider can be tried. This keeps the request from crashing and avoids exposing raw provider output.
+- **Provider fallback**: We try the cheapest provider (OpenAI) first and fall back to Gemini on any failure (network, rate limit, or invalid response). This improves reliability without changing the API contract.
+- **Cost calculated locally**: Providers return only token counts; there is no provider cost API. We compute USD cost server-side using published per-model pricing so the API can return `costUSD` without extra provider calls.
+
+### LLM Robustness
+- **Invalid outputs**: Raw response text is parsed with a try/catch; the result is validated against a strict schema (`triage-output.schema.ts`). On parse or schema failure we throw `InvalidLLMResponseError`, retry the same provider once, then surface a stable 503 with message *"Triage could not be completed: model returned invalid response"*. No raw provider output or stack traces are exposed.
+- **Provider failure**: On network/API/rate-limit errors the provider throws; `FallbackProvider` tries the next provider. If all fail we throw `ProviderFailureError` and return 503 *"Triage service temporarily unavailable"*.
+
+### Cost Calculation
+- **Formula**: `costUSD = (inputTokens × inputTokenPrice) + (outputTokens × outputTokenPrice)`. All logic lives in `src/llm/cost-calculator.ts`; pricing is per-model and fallback uses a default rate for unknown models.
+- **Pricing sources (February 2026)**:
+  - [OpenAI pricing](https://openai.com/api/pricing)
+  - [Google Gemini pricing](https://ai.google.dev/pricing)
+
 ### Architecture
 - **Strategy Pattern**: Used for LLM providers. Each provider implements the `ILLMProvider` interface, encapsulating its specific API calls, prompt structure, and token mapping.
 - **Composite Pattern**: The `FallbackProvider` implements the same interface but orchestrates a list of providers, providing automatic fallback logic without the service layer knowing about the complexity.
@@ -95,9 +110,9 @@ You can also import the provided `LLM-Backend-Triage.postman_collection.json` fi
 1. **Primary: OpenAI `gpt-4o-mini`**
    - **Why**: Excellent instruction following and JSON output at a very low price point.
    - **Pricing (2026)**: $0.15 / 1M input tokens, $0.60 / 1M output tokens.
-2. **Fallback: Google Gemini `gemini-3-flash`**
-   - **Why**: Robust fallback with frontier-level performance and very fast response times.
-   - **Pricing (2026)**: $0.50 / 1M input tokens, $3.00 / 1M output tokens.
+2. **Fallback: Google Gemini `gemini-2.5-flash`**
+   - **Why**: Robust fallback with strong performance and fast response times.
+   - **Pricing (2026)**: $0.15 / 1M input tokens, $0.60 / 1M output tokens (see `src/llm/cost-calculator.ts`).
 
 ### Triage Logic
 - **Categories**: `billing`, `technical`, `account`, `sales`, `other`.
@@ -107,14 +122,6 @@ You can also import the provided `LLM-Backend-Triage.postman_collection.json` fi
   - `is_abusive`: Detects hostile language.
   - `missing_info`: Set true if the agent cannot triage effectively without more details.
   - `is_vip_customer`: Inferred from context if possible (e.g., mentions of "Enterprise plan" or "Premier support").
-
-### Cost Calculation
-The cost is calculated per request using the following formula:
-`Cost = (InputTokens * InputRate) + (OutputTokens * OutputRate)`
-
-**Pricing Sources (as of February 2026):**
-- **OpenAI**: [https://openai.com/api/pricing](https://openai.com/api/pricing)
-- **Google Gemini**: [https://ai.google.dev/pricing](https://ai.google.dev/pricing) (Based on Gemini 3 Flash standard rates)
 
 ## Future Improvements
 - **Caching**: Implement Redis to cache triage results for identical tickets to save cost and time.

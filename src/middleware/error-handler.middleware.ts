@@ -1,31 +1,58 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../utils/logger';
 import { ZodError } from 'zod';
+import { InvalidLLMResponseError, ProviderFailureError } from '../errors';
+import { logger } from '../utils/logger';
+
+/** Stable, human-readable messages for API consumers. No raw provider output or stack. */
+const MESSAGES = {
+  validationFailed: 'Validation failed',
+  invalidLLMResponse: 'Triage could not be completed: model returned invalid response',
+  providerFailure: 'Triage service temporarily unavailable',
+  internalError: 'Internal server error'
+} as const;
 
 export const errorHandler = (
   err: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   const requestId = req.headers['x-request-id'];
 
   if (err instanceof ZodError) {
     logger.warn({ requestId, errors: err.issues }, 'Validation error');
     return res.status(400).json({
-      error: 'Validation failed',
+      error: MESSAGES.validationFailed,
       details: err.issues.map(e => ({ path: e.path, message: e.message }))
     });
   }
 
-  logger.error({ 
-    requestId, 
-    error: err.message, 
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+  if (err instanceof InvalidLLMResponseError) {
+    logger.warn({ requestId }, 'Invalid LLM response');
+    return res.status(503).json({
+      error: MESSAGES.invalidLLMResponse,
+      requestId
+    });
+  }
+
+  if (err instanceof ProviderFailureError) {
+    logger.error({ requestId, error: err.message }, 'Provider failure');
+    return res.status(503).json({
+      error: MESSAGES.providerFailure,
+      requestId
+    });
+  }
+
+  logger.error({
+    requestId,
+    error: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   }, 'Unhandled error');
 
-  const statusCode = (err as any).status || 500;
-  const message = statusCode === 500 ? 'Internal server error' : err.message;
+  const statusCode = 'status' in err && typeof (err as { status?: number }).status === 'number'
+    ? (err as { status: number }).status
+    : 500;
+  const message = statusCode === 500 ? MESSAGES.internalError : err.message;
 
   res.status(statusCode).json({
     error: message,

@@ -1,4 +1,5 @@
 import { ILLMProvider, TriageResponse } from '../interfaces/llm-provider.interface';
+import { ProviderFailureError } from '../../errors';
 import { logger } from '../../utils/logger';
 
 export class FallbackProvider implements ILLMProvider {
@@ -11,23 +12,16 @@ export class FallbackProvider implements ILLMProvider {
 
     for (const provider of this.providers) {
       try {
-        logger.info({ provider: provider.name }, `Attempting triage with provider`);
-        const result = await provider.triage(subject, body);
-        
-        // Add which provider was actually used to the response if needed, 
-        // though the spec doesn't explicitly require it in the success payload
-        return result;
-      } catch (error: any) {
-        logger.warn({ 
-          provider: provider.name, 
-          error: error.message 
-        }, `Provider failed, trying next fallback`);
-        lastError = error;
+        logger.info({ provider: provider.name }, 'Attempting triage with provider');
+        return await provider.triage(subject, body);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.warn({ provider: provider.name, error: message }, 'Provider failed, trying next fallback');
+        lastError = error instanceof Error ? error : new Error(message);
       }
     }
 
-    const errorMessage = `All LLM providers failed. Last error: ${lastError?.message}`;
-    logger.error(errorMessage);
-    throw new Error(errorMessage);
+    logger.error({ lastError: lastError?.message }, 'All LLM providers failed');
+    throw new ProviderFailureError('Triage service temporarily unavailable');
   }
 }
