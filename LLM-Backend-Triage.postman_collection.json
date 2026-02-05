@@ -1,100 +1,59 @@
 {
-	"info": {
-		"_postman_id": "8d2a4a3b-2345-4b3d-8f9c-7e6d5c4b3a2f",
-		"name": "LLM Backend - Triage Service",
-		"description": "API collection for testing the LLM-powered support ticket triage service.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "Triage Ticket (Success)",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"subject\": \"Cannot log in to my account\",\n    \"body\": \"I keep getting an incorrect password error even though I just reset it.\"\n}"
-				},
-				"url": {
-					"raw": "http://localhost:3000/triage-ticket",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "3000",
-					"path": [
-						"triage-ticket"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Triage Ticket (Missing Info)",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"subject\": \"Help\",\n    \"body\": \"I need help with something.\"\n}"
-				},
-				"url": {
-					"raw": "http://localhost:3000/triage-ticket",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "3000",
-					"path": [
-						"triage-ticket"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Validation Error (Empty Body)",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"subject\": \"\",\n    \"body\": \"\"\n}"
-				},
-				"url": {
-					"raw": "http://localhost:3000/triage-ticket",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "3000",
-					"path": [
-						"triage-ticket"
-					]
-				}
-			},
-			"response": []
-		}
-	],
-	"variable": [
-		{
-			"key": "base_url",
-			"value": "http://localhost:3000"
-		}
-	]
+  "info": {
+    "_postman_id": "8d2a4a3b-2345-4b3d-8f9c-7e6d5c4b3a2f",
+    "name": "LLM Backend - Triage Service",
+    "description": "API collection for testing the LLM-powered support ticket triage service. Four examples: one per flag (requires_human, is_abusive, missing_info, is_vip_customer), with priorities Low, High, Urgent, and Normal. Select a Postman environment (e.g. Local) so requests use the correct base_url, protocol, host, and port.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Low + requires_human",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"subject\": \"Where can I find the PDF export option?\",\n    \"body\": \"I'd like to export my report as PDF but I can't find the button. Is it under File or somewhere else? Not urgent, just curious.\"\n}"
+        },
+        "url": {"raw": "{{base_url}}/triage-ticket", "protocol": "{{protocol}}", "host": ["{{host}}"], "port": "{{port}}", "path": ["triage-ticket"]}
+      }
+    },
+    {
+      "name": "High + is_abusive",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"subject\": \"Double charged\",\n    \"body\": \"You charged me twice! This is a scam. I want my money back immediately or I'm reporting you.\"\n}"
+        },
+        "url": {"raw": "{{base_url}}/triage-ticket", "protocol": "{{protocol}}", "host": ["{{host}}"], "port": "{{port}}", "path": ["triage-ticket"]}
+      }
+    },
+    {
+      "name": "Urgent + missing_info",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"subject\": \"Everything is down!!!\",\n    \"body\": \"Nothing works!!! URGENT!!!\"\n}"
+        },
+        "url": {"raw": "{{base_url}}/triage-ticket", "protocol": "{{protocol}}", "host": ["{{host}}"], "port": "{{port}}", "path": ["triage-ticket"]}
+      }
+    },
+    {
+      "name": "Normal + is_vip_customer",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"subject\": \"Enterprise - add users\",\n    \"body\": \"We're an Enterprise customer. We need to add 5 new users to our team. Who do we contact?\"\n}"
+        },
+        "url": {"raw": "{{base_url}}/triage-ticket", "protocol": "{{protocol}}", "host": ["{{host}}"], "port": "{{port}}", "path": ["triage-ticket"]}
+      }
+    }
+  ],
+  "variable": []
 }

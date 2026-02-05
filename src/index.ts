@@ -1,15 +1,15 @@
 import 'dotenv/config';
 import express from 'express';
-import { OpenAIProvider } from './llm/providers/openai.provider.js';
-import { GeminiProvider } from './llm/providers/gemini.provider.js';
-import { FallbackProvider } from './llm/providers/fallback.provider.js';
-import { TriageService } from './services/triage.service.js';
-import { createTriageRouter } from './routes/triage.route.js';
-import { errorHandler } from './middleware/error-handler.middleware.js';
-import { requestLogger } from './middleware/request-logger.middleware.js';
-import { logger } from './utils/logger.js';
+import { OpenAIProvider } from './llm/providers/openai.provider';
+import { GeminiProvider } from './llm/providers/gemini.provider';
+import { FallbackProvider } from './llm/providers/fallback.provider';
+import { TriageService } from './services/triage.service';
+import { createTriageRouter } from './routes/triage.route';
+import { errorHandler } from './middleware/error-handler.middleware';
+import { requestLogger } from './middleware/request-logger.middleware';
+import { logger } from './utils/logger';
 
-import { ILLMProvider } from './llm/interfaces/llm-provider.interface.js';
+import { ILLMProvider } from './llm/interfaces/llm-provider.interface';
 
 const app = express();
 const port = process.env.PORT || 3000;

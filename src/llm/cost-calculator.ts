@@ -7,6 +7,10 @@ export const PRICING = {
     input: 0.50 / 1_000_000,
     output: 3.00 / 1_000_000,
   },
+  'gemini-2.5-flash': {
+    input: 0.15 / 1_000_000,
+    output: 0.60 / 1_000_000,
+  },
   // Default fallback if model name doesn't match exactly
   'default': {
     input: 0.50 / 1_000_000,

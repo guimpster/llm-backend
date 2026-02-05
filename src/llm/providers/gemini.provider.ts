@@ -1,13 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { ILLMProvider, TriageResponse } from '../interfaces/llm-provider.interface.js';
-import { calculateCost } from '../cost-calculator.js';
-import { logger } from '../../utils/logger.js';
+import { ILLMProvider, TriageResponse } from '../interfaces/llm-provider.interface';
+import { calculateCost } from '../cost-calculator';
+import { logger } from '../../utils/logger';
 
 export class GeminiProvider implements ILLMProvider {
   private genAI: GoogleGenerativeAI;
   public name = 'gemini';
-  private model = 'gemini-1.5-flash'; // Using stable SDK model identifier
-  private pricingModel = 'gemini-3-flash'; // Using pricing for Gemini 3 Flash as requested
+  private model = 'gemini-2.5-flash'; // Stable model (gemini-1.5-flash is no longer available in v1beta)
+  private pricingModel = 'gemini-2.5-flash';
 
   constructor(apiKey: string) {
     this.genAI = new GoogleGenerativeAI(apiKey);

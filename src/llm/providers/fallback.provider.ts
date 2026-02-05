@@ -1,5 +1,5 @@
-import { ILLMProvider, TriageResponse } from '../interfaces/llm-provider.interface.js';
-import { logger } from '../../utils/logger.js';
+import { ILLMProvider, TriageResponse } from '../interfaces/llm-provider.interface';
+import { logger } from '../../utils/logger';
 
 export class FallbackProvider implements ILLMProvider {
   public name = 'fallback-wrapper';

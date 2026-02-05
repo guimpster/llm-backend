@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
-import { ILLMProvider, TriageResponse } from '../interfaces/llm-provider.interface.js';
-import { calculateCost } from '../cost-calculator.js';
-import { logger } from '../../utils/logger.js';
+import { ILLMProvider, TriageResponse } from '../interfaces/llm-provider.interface';
+import { calculateCost } from '../cost-calculator';
+import { logger } from '../../utils/logger';
 
 export class OpenAIProvider implements ILLMProvider {
   private client: OpenAI;

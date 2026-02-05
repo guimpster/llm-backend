@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { TriageService } from '../services/triage.service.js';
-import { triageInputSchema } from '../validation/triage-input.schema.js';
+import { TriageService } from '../services/triage.service';
+import { triageInputSchema } from '../validation/triage-input.schema';
 
 export const createTriageRouter = (triageService: TriageService) => {
   const router = Router();
