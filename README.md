@@ -79,6 +79,9 @@ curl -X POST http://localhost:3000/triage-ticket \
 }
 ```
 
+### Postman Collection
+You can also import the provided `LLM-Backend-Triage.postman_collection.json` file into Postman to test different scenarios quickly.
+
 ## Implementation Details & Assumptions
 
 ### Architecture

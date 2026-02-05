@@ -1,0 +1,100 @@
+{
+	"info": {
+		"_postman_id": "8d2a4a3b-2345-4b3d-8f9c-7e6d5c4b3a2f",
+		"name": "LLM Backend - Triage Service",
+		"description": "API collection for testing the LLM-powered support ticket triage service.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Triage Ticket (Success)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"subject\": \"Cannot log in to my account\",\n    \"body\": \"I keep getting an incorrect password error even though I just reset it.\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/triage-ticket",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"triage-ticket"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Triage Ticket (Missing Info)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"subject\": \"Help\",\n    \"body\": \"I need help with something.\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/triage-ticket",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"triage-ticket"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Validation Error (Empty Body)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"subject\": \"\",\n    \"body\": \"\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/triage-ticket",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"triage-ticket"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000"
+		}
+	]
+}
