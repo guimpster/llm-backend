@@ -4,6 +4,7 @@ import { calculateCost } from '../cost-calculator';
 import { parseAndValidateLLMOutput } from '../parse-llm-response';
 import { InvalidLLMResponseError } from '../../errors';
 import { logger } from '../../utils/logger';
+import { withRetry } from '../../utils/retry';
 
 export class GeminiProvider implements ILLMProvider {
   private genAI: GoogleGenerativeAI;
@@ -63,37 +64,27 @@ export class GeminiProvider implements ILLMProvider {
   }
 
   async triage(subject: string, body: string): Promise<TriageResponse> {
-    const attempt = async (): Promise<TriageResponse> => {
-      const { content, inputTokens, outputTokens } = await this.callAPI(subject, body);
-      const parsed = parseAndValidateLLMOutput(content);
-      return {
-        category: parsed.category,
-        priority: parsed.priority,
-        flags: parsed.flags,
-        usage: {
-          inputTokens,
-          outputTokens,
-          costUSD: calculateCost(this.pricingModel, inputTokens, outputTokens),
-          model: this.pricingModel
-        }
-      };
-    };
-
-    try {
-      return await attempt();
-    } catch (error) {
-      // Invalid/malformed output: retry once with same provider, then give up
-      if (error instanceof InvalidLLMResponseError) {
-        logger.warn({ provider: this.name }, 'Invalid LLM response, retrying once');
-        try {
-          return await attempt();
-        } catch (retryError) {
-          logger.error({ provider: this.name }, 'Retry after invalid response failed');
-          throw retryError instanceof InvalidLLMResponseError ? retryError : new InvalidLLMResponseError();
-        }
+    return withRetry(
+      async () => {
+        const { content, inputTokens, outputTokens } = await this.callAPI(subject, body);
+        const parsed = parseAndValidateLLMOutput(content);
+        return {
+          category: parsed.category,
+          priority: parsed.priority,
+          flags: parsed.flags,
+          usage: {
+            inputTokens,
+            outputTokens,
+            costUSD: calculateCost(this.pricingModel, inputTokens, outputTokens),
+            model: this.pricingModel
+          }
+        };
+      },
+      {
+        retries: 1,
+        shouldRetry: (err) => err instanceof InvalidLLMResponseError,
+        onRetry: () => logger.warn({ provider: this.name }, 'Invalid LLM response, retrying')
       }
-      logger.error({ error, provider: this.name }, 'Gemini triage failed');
-      throw error;
-    }
+    );
   }
 }
