@@ -13,7 +13,9 @@ A small backend service built with TypeScript and Node.js that uses LLMs (OpenAI
 ## Prerequisites
 
 - Node.js (LTS version recommended)
-- An OpenAI API Key and/or a Google Gemini API Key.
+- API Keys:
+  - **OpenAI API Key**: Get it at [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+  - **Google Gemini API Key**: Get it at [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 
 ## Installation
 
