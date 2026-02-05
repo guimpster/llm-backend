@@ -1,4 +1,4 @@
-# LLM Backend Assessment - Triage Service
+# LLM Backend - Triage Service
 
 A small backend service built with TypeScript and Node.js that uses LLMs (OpenAI/Gemini) to triage support tickets.
 
