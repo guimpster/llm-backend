@@ -109,7 +109,10 @@ You can also import the provided `LLM-Backend-Triage.postman_collection.json` fi
 ### Cost Calculation
 The cost is calculated per request using the following formula:
 `Cost = (InputTokens * InputRate) + (OutputTokens * OutputRate)`
-Rates are sourced from official provider pricing pages as of February 2026.
+
+**Pricing Sources (as of February 2026):**
+- **OpenAI**: [https://openai.com/api/pricing](https://openai.com/api/pricing)
+- **Google Gemini**: [https://ai.google.dev/pricing](https://ai.google.dev/pricing) (Based on Gemini 3 Flash standard rates)
 
 ## Future Improvements
 - **Caching**: Implement Redis to cache triage results for identical tickets to save cost and time.
