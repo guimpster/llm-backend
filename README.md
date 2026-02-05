@@ -123,6 +123,10 @@ You can also import the provided `LLM-Backend-Triage.postman_collection.json` fi
   - `missing_info`: Set true if the agent cannot triage effectively without more details.
   - `is_vip_customer`: Inferred from context if possible (e.g., mentions of "Enterprise plan" or "Premier support").
 
+## Troubleshooting
+
+- **`git commit` fails with "unknown option trailer"** (e.g. when using Cursor): Cursor injects `--trailer` into commits; the system Git (macOS Command Line Tools) may not support it. Use a newer Git: `brew install git` and ensure `/usr/local/bin` is before `/usr/bin` in your PATH (e.g. `export PATH="/usr/local/bin:$PATH"` in `~/.zshrc`), or run `PATH="/usr/local/bin:$PATH" git commit ...`.
+
 ## Future Improvements
 - **Caching**: Implement Redis to cache triage results for identical tickets to save cost and time.
 - **Retries with Backoff**: Add exponential backoff for transient network errors before falling back to the next provider.
