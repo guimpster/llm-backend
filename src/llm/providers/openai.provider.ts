@@ -56,7 +56,7 @@ export class OpenAIProvider implements ILLMProvider {
 
     const content = completion.choices[0]?.message?.content;
     if (!content || typeof content !== 'string') {
-      throw new InvalidLLMResponseError('OpenAI returned an empty response');
+      throw new InvalidLLMResponseError();
     }
 
     const inputTokens = completion.usage?.prompt_tokens ?? 0;

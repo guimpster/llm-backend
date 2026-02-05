@@ -55,7 +55,7 @@ export class GeminiProvider implements ILLMProvider {
     const response = result.response;
     const text = response.text();
     if (!text || typeof text !== 'string') {
-      throw new InvalidLLMResponseError('Gemini returned an empty response');
+      throw new InvalidLLMResponseError();
     }
     const inputTokens = response.usageMetadata?.promptTokenCount ?? 0;
     const outputTokens = response.usageMetadata?.candidatesTokenCount ?? 0;

@@ -86,20 +86,14 @@ You can also import the provided `LLM-Backend-Triage.postman_collection.json` fi
 
 ## Implementation Details & Assumptions
 
-### Tradeoffs & Assumptions
-- **Strict output validation + one retry**: LLMs can return invalid JSON or shapes that don’t match the schema. We parse safely, validate with a Zod schema, and on failure retry the same provider once; if it still fails we throw so the fallback provider can be tried. This keeps the request from crashing and avoids exposing raw provider output.
-- **Provider fallback**: We try the cheapest provider (OpenAI) first and fall back to Gemini on any failure (network, rate limit, or invalid response). This improves reliability without changing the API contract.
-- **Cost calculated locally**: Providers return only token counts; there is no provider cost API. We compute USD cost server-side using published per-model pricing so the API can return `costUSD` without extra provider calls.
+### Why cost is calculated locally
+Providers return only token counts; there is no provider cost API. We compute USD cost server-side using published per-model pricing so the API can return `costUSD` without extra provider calls. Formula: `costUSD = (inputTokens × inputTokenPrice) + (outputTokens × outputTokenPrice)`. Logic lives in `src/llm/cost-calculator.ts`; pricing is per-model with a default rate for unknown models. Pricing sources (February 2026): [OpenAI](https://openai.com/api/pricing), [Gemini](https://ai.google.dev/pricing).
 
-### LLM Robustness
-- **Invalid outputs**: Raw response text is parsed with a try/catch; the result is validated against a strict schema (`triage-output.schema.ts`). On parse or schema failure we throw `InvalidLLMResponseError`, retry the same provider once, then surface a stable 503 with message *"Triage could not be completed: model returned invalid response"*. No raw provider output or stack traces are exposed.
-- **Provider failure**: On network/API/rate-limit errors the provider throws; `FallbackProvider` tries the next provider. If all fail we throw `ProviderFailureError` and return 503 *"Triage service temporarily unavailable"*.
+### Why LLM output validation + retry exists
+LLMs can return invalid JSON or shapes that don't match the schema. We parse safely, validate with a Zod schema (`triage-output.schema.ts`), and on failure retry the same provider once; if it still fails we throw so the fallback provider can be tried. This keeps responses stable and avoids exposing raw provider output or stack traces. Invalid output surfaces as 503 *"Triage could not be completed: model returned invalid response"*. Provider failures (network, rate limit) trigger fallback; if all providers fail we return 503 *"Triage service temporarily unavailable"*.
 
-### Cost Calculation
-- **Formula**: `costUSD = (inputTokens × inputTokenPrice) + (outputTokens × outputTokenPrice)`. All logic lives in `src/llm/cost-calculator.ts`; pricing is per-model and fallback uses a default rate for unknown models.
-- **Pricing sources (February 2026)**:
-  - [OpenAI pricing](https://openai.com/api/pricing)
-  - [Google Gemini pricing](https://ai.google.dev/pricing)
+### Provider fallback
+We try the cheapest provider (OpenAI) first and fall back to Gemini on any failure. This improves reliability without changing the API contract.
 
 ### Architecture
 - **Strategy Pattern**: Used for LLM providers. Each provider implements the `ILLMProvider` interface, encapsulating its specific API calls, prompt structure, and token mapping.
@@ -127,8 +121,13 @@ You can also import the provided `LLM-Backend-Triage.postman_collection.json` fi
 
 - **`git commit` fails with "unknown option trailer"** (e.g. when using Cursor): Cursor injects `--trailer` into commits; the system Git (macOS Command Line Tools) may not support it. Use a newer Git: `brew install git` and ensure `/usr/local/bin` is before `/usr/bin` in your PATH (e.g. `export PATH="/usr/local/bin:$PATH"` in `~/.zshrc`), or run `PATH="/usr/local/bin:$PATH" git commit ...`.
 
-## Future Improvements
-- **Caching**: Implement Redis to cache triage results for identical tickets to save cost and time.
+## Known limitations
+- Cost is computed from published token pricing (approximate; no live provider cost API).
+- Single retry per provider on invalid output; no exponential backoff for network errors.
+- No caching of triage results for identical tickets.
+
+## Future improvements
+- **Caching**: Redis for identical tickets to save cost and time.
 - **Retries with Backoff**: Add exponential backoff for transient network errors before falling back to the next provider.
 - **Unit & Integration Tests**: Add a test suite using Jest or Vitest with MSW to mock LLM API responses.
 - **Observability**: Export logs and metrics to a tool like Grafana or Datadog for better monitoring.

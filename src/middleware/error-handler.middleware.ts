@@ -49,13 +49,9 @@ export const errorHandler = (
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   }, 'Unhandled error');
 
-  const statusCode = 'status' in err && typeof (err as { status?: number }).status === 'number'
-    ? (err as { status: number }).status
-    : 500;
-  const message = statusCode === 500 ? MESSAGES.internalError : err.message;
-
-  res.status(statusCode).json({
-    error: message,
+  // Unknown errors: always 500 and a stable message so we never leak SDK or stack details.
+  res.status(500).json({
+    error: MESSAGES.internalError,
     requestId
   });
 };

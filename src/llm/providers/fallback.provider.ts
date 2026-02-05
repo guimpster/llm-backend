@@ -21,6 +21,7 @@ export class FallbackProvider implements ILLMProvider {
       }
     }
 
+    // We never rethrow or expose lastError to the client; only a stable domain message.
     logger.error({ lastError: lastError?.message }, 'All LLM providers failed');
     throw new ProviderFailureError('Triage service temporarily unavailable');
   }

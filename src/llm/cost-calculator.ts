@@ -6,7 +6,6 @@
  */
 const PRICE_PER_TOKEN_USD: Record<string, { input: number; output: number }> = {
   'gpt-4o-mini': { input: 0.15 / 1_000_000, output: 0.60 / 1_000_000 },
-  'gemini-3-flash': { input: 0.50 / 1_000_000, output: 3.00 / 1_000_000 },
   'gemini-2.5-flash': { input: 0.15 / 1_000_000, output: 0.60 / 1_000_000 },
   default: { input: 0.50 / 1_000_000, output: 1.50 / 1_000_000 }
 };
